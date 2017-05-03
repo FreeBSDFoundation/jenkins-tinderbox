@@ -1,3 +1,9 @@
+/* 
+ * MIT License
+ * Copyright (c) 2017 The FreeBSD Foundation
+ * Refer to LICENSE
+*/
+
 // utility functions
 
 function getJSON(path, callback) {
