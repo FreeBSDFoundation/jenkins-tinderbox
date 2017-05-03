@@ -1,0 +1,35 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background-color: white;
+  color: navy;
+}
+
+a:link { color: blue; }
+a:visited { color: gray; }
+a:active { color: red; }
+a:hover { color: blue; }
+
+.tiny { font-size: x-small; }
+
+table {
+  border-collapse: collapse;
+}
+
+tr { border: none; }
+th { background-color: #eeeeff; }
+td { border: grey 1px solid; }
+
+td, th {
+  width: 18ex;
+  text-align: center;
+  padding: 3pt;
+}
+
+i {
+  color: grey;
+  font-size: small;
+}
+
+.success { color: #007700; }
+.failure { color: #ff0000; }
