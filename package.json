@@ -1,0 +1,22 @@
+{
+  "name": "jenkins-tinderbox",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FreeBSDFoundation/jenkins-tinderbox.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/FreeBSDFoundation/jenkins-tinderbox/issues"
+  },
+  "homepage": "https://github.com/FreeBSDFoundation/jenkins-tinderbox#readme",
+  "dependencies": {
+    "request": "^2.81.0"
+  }
+}

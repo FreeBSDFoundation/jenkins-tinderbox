@@ -8,7 +8,7 @@
 
 function getJSON(path, callback) {
   var xmlhttp = new XMLHttpRequest();
-  // var url = "<origin>" + path;
+  // var url = "origin" + path;
 
   xmlhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
@@ -57,33 +57,33 @@ var _span_  = document.createElement('span');
 function generateFormattedCell(job) {
   var td = _td_.cloneNode(false);
 
-  if (job && job.lastBuild) {
+  if (job && job.lastCompletedBuild) {
     // last build time and status
     var info = _span_.cloneNode(false);
-    info.setAttribute('class', job.lastBuild.result === 'SUCCESS' ? 'success' : 'failure');
-    var lastBuildDate = new Date(job.lastBuild.timestamp);
+    info.setAttribute('class', job.lastCompletedBuild.result === 'SUCCESS' ? 'success' : 'failure');
+    var lastCompletedBuildDate = new Date(job.lastCompletedBuild.timestamp);
     info.appendChild(document.createTextNode([
-      lastBuildDate.getUTCFullYear(),
-      twoDigits(lastBuildDate.getUTCMonth() + 1),
-      twoDigits(lastBuildDate.getUTCDay())
+      lastCompletedBuildDate.getUTCFullYear(),
+      twoDigits(lastCompletedBuildDate.getUTCMonth() + 1),
+      twoDigits(lastCompletedBuildDate.getUTCDay())
     ].join('-')));
     info.appendChild(_br_.cloneNode(false));
     info.appendChild(document.createTextNode(
-      twoDigits(lastBuildDate.getUTCHours()) + ':' +
-      twoDigits(lastBuildDate.getUTCMinutes()) + ' UTC'
+      twoDigits(lastCompletedBuildDate.getUTCHours()) + ':' +
+      twoDigits(lastCompletedBuildDate.getUTCMinutes()) + ' UTC'
     ));
     td.appendChild(info);
     td.appendChild(_br_.cloneNode(false));
 
     // SVN revision number
     var revision = document.createElement('i');
-    revision.appendChild(document.createTextNode(job.lastBuild.description));
+    revision.appendChild(document.createTextNode(job.lastCompletedBuild.description || 'unknown revision'));
     td.appendChild(revision);
     td.appendChild(_br_.cloneNode(false));
-    if (job.lastBuild.result !== 'SUCCESS') {
+    if (job.lastCompletedBuild.result !== 'SUCCESS') {
       var failingSince = document.createElement('i');
       failingSince.appendChild(document.createTextNode(
-        '(failing since ' + job.lastSuccessfulBuild.description + ')'
+        '(failing since ' + (job.lastSuccessfulBuild.description || '?') + ')'
       ));
       td.appendChild(failingSince);
       td.appendChild(_br_.cloneNode(false));
@@ -92,7 +92,7 @@ function generateFormattedCell(job) {
     // link to full jenkins job detail
     var links = _span_.cloneNode(false);
     links.setAttribute('class', 'tiny');
-    if (job.lastBuild.result !== 'SUCCESS') {
+    if (job.lastCompletedBuild.result !== 'SUCCESS') {
       var lastSuccessful = document.createElement('a');
       lastSuccessful.setAttribute('href', job.lastSuccessfulBuild.url);
       lastSuccessful.appendChild(document.createTextNode('last successful build'));
@@ -100,7 +100,7 @@ function generateFormattedCell(job) {
       links.appendChild(document.createTextNode(' | '));
     }
     var href = document.createElement('a');
-    href.setAttribute('href', job.lastBuild.url);
+    href.setAttribute('href', job.lastCompletedBuild.url);
     href.appendChild(document.createTextNode('details'));
     links.appendChild(href);
     td.appendChild(links);
@@ -119,7 +119,9 @@ function generateTable(tableData) {
   var thead = document.createElement('thead');
   var columnHeaders = _tr_.cloneNode(false);
   columnHeaders.appendChild(_th_.cloneNode(false));
-  var columnNames = unique([].concat.apply([], rows.map(Object.keys)));
+  var columnNames = unique([].concat.apply([], rows.map(Object.keys))).sort(function(a, b) {
+    return a[1]._order < b[1]._order;
+  });
   // TODO: make this cleaner, getting rid of the "order" field
   columnNames.splice(columnNames.indexOf('_order'), 1);
   columnNames.forEach(function(c) {
@@ -134,9 +136,7 @@ function generateTable(tableData) {
   // generating rows, ordered in decending order
   // starting with latest build version
   var tbody = document.createElement('tbody');
-  Object.entries(tableData).sort(function(a, b) {
-    return a[1]._order < b[1]._order;
-  }).forEach(function(entry) {
+  Object.entries(tableData).forEach(function(entry) {
     var tr = _tr_.cloneNode(false);
 
     var th = _th_.cloneNode(false);
@@ -158,20 +158,20 @@ function generateTable(tableData) {
   document.body.appendChild(table);
 }
 
-getJSON('/jenkins/api/json?tree=jobs[name,lastBuild[result,timestamp,url,description],lastSuccessfulBuild[result,timestamp,url,description]]', function(data) {
+getJSON('/jenkins/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,url,description],lastSuccessfulBuild[result,timestamp,url,description]]', function(data) {
   var tableData = {};
   data.jobs.forEach(function(job) {
     // e.g. 1. FreeBSD-stable-10-amd64-build
     // e.g. 2. FreeBSD-head-amd64-build
     var splitName = job.name.split('-');
     if (splitName.shift() === 'FreeBSD' && splitName.pop() === 'build') {
-      // splitName contains version-[number]-arch
+      // splitName contains version-[number-]arch
       var arch = splitName.pop();
       var version = splitName.join('/');
-      if (!tableData[version]) {
-        tableData[version] = {_order: getVersionOrder(splitName)};
+      if (!tableData[arch]) {
+        tableData[arch] = {_order: getVersionOrder(splitName)};
       }
-      tableData[version][arch] = job;
+      tableData[arch][version] = job;
     }
   });
 
