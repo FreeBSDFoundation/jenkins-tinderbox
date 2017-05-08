@@ -65,7 +65,7 @@ function generateFormattedCell(job) {
     info.appendChild(document.createTextNode([
       lastCompletedBuildDate.getUTCFullYear(),
       twoDigits(lastCompletedBuildDate.getUTCMonth() + 1),
-      twoDigits(lastCompletedBuildDate.getUTCDay())
+      twoDigits(lastCompletedBuildDate.getUTCDate())
     ].join('-')));
     info.appendChild(_br_.cloneNode(false));
     info.appendChild(document.createTextNode(
