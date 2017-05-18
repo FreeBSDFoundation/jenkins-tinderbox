@@ -105,7 +105,7 @@ function generateFormattedCell(job) {
     links.appendChild(href);
     td.appendChild(links);
   } else {
-    td.appendChild(document.createTextNode('N/A'));
+    td.appendChild(document.createTextNode('-'));
   }
 
   return td;
