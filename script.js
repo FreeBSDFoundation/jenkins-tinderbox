@@ -1,4 +1,4 @@
-/* 
+/*
  * MIT License
  * Copyright (c) 2017 The FreeBSD Foundation
  * Refer to LICENSE
@@ -60,7 +60,7 @@ function generateFormattedCell(job) {
   if (job && job.lastCompletedBuild) {
     // last build time and status
     var info = _span_.cloneNode(false);
-    info.setAttribute('class', job.lastCompletedBuild.result === 'SUCCESS' ? 'success' : 'failure');
+    info.setAttribute('class', job.lastCompletedBuild.result.toLowerCase());
     var lastCompletedBuildDate = new Date(job.lastCompletedBuild.timestamp);
     info.appendChild(document.createTextNode([
       lastCompletedBuildDate.getUTCFullYear(),
@@ -176,4 +176,5 @@ getJSON('/jenkins/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,ur
   });
 
   generateTable(tableData);
+  document.body.appendChild(document.createTextNode("Last updated: " + new Date()));
 });

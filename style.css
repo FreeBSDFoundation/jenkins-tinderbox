@@ -33,3 +33,4 @@ i {
 
 .success { color: #007700; }
 .failure { color: #ff0000; }
+.unstable { color: #d1a900; }
