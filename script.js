@@ -158,7 +158,7 @@ function generateTable(tableData) {
   document.body.appendChild(table);
 }
 
-getJSON('/jenkins/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,url,description],lastSuccessfulBuild[result,timestamp,url,description]]', function(data) {
+getJSON('/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,url,description],lastSuccessfulBuild[result,timestamp,url,description]]', function(data) {
   var tableData = {};
   data.jobs.forEach(function(job) {
     // e.g. 1. FreeBSD-stable-10-amd64-build
