@@ -8,7 +8,8 @@
 
 function getJSON(path, callback) {
   var xmlhttp = new XMLHttpRequest();
-  // var url = "origin" + path;
+  origin = location.hostname === 'localhost' ? origin.replace('3000','8000') : origin; // use proxy for localhost to avoid CORS
+  var url = origin + path;
 
   xmlhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
@@ -177,4 +178,19 @@ getJSON('/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,url,descri
 
   generateTable(tableData);
   document.body.appendChild(document.createTextNode("Last updated: " + new Date()));
+  var cb_id = 'cb_ar';
+  var checkbox = document.createElement('input');
+  checkbox.id = cb_id;
+  checkbox.type = 'checkbox';
+  checkbox.checked = true;
+  checkbox.style.marginLeft = '100px';
+  document.body.appendChild(checkbox);
+  document.body.appendChild(document.createTextNode("Auto Refresh"));
+
+  setInterval(function() {
+    if (document.getElementById(cb_id).checked){
+        location.reload();
+    }
+}, 30000);
 });
+
