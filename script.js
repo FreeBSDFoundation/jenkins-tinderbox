@@ -83,7 +83,7 @@ function generateFormattedCell(job) {
     if (job.lastCompletedBuild.result !== 'SUCCESS') {
       var failingSince = document.createElement('i');
       failingSince.appendChild(document.createTextNode(
-        '(failing since ' + (job.lastSuccessfulBuild.description || '?') + ')'
+        '(failing since ' + (job.lastSuccessfulBuild ? (job.lastSuccessfulBuild.description || 'n/a') : 'n/a') + ')'
       ));
       td.appendChild(failingSince);
       td.appendChild(_br_.cloneNode(false));
@@ -94,7 +94,7 @@ function generateFormattedCell(job) {
     links.setAttribute('class', 'tiny');
     if (job.lastCompletedBuild.result !== 'SUCCESS') {
       var lastSuccessful = document.createElement('a');
-      lastSuccessful.setAttribute('href', job.lastSuccessfulBuild.url);
+      lastSuccessful.setAttribute('href', job.lastSuccessfulBuild ? job.lastSuccessfulBuild.url : '#');
       lastSuccessful.appendChild(document.createTextNode('last successful build'));
       links.appendChild(lastSuccessful);
       links.appendChild(document.createTextNode(' | '));
