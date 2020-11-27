@@ -4,11 +4,30 @@
  * Refer to LICENSE
 */
 
+
+// global options
+
+var RUN_ENV = 'local' // one of ['local', 'stage', 'prod']
+
+
+// configurations
+
+var JENKINS_URL = 'https://ci.freebsd.org';
+var PAYLOAD_URL = '/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,url,description],lastSuccessfulBuild[result,timestamp,url,description]]';
+
+if (RUN_ENV === 'local') {
+  JENKINS_URL = 'http://localhost:8000';
+} else if (RUN_ENV === 'stage') {
+  JENKINS_URL = 'https://people.freebsd.org/~ygy/tinderbox';
+  PAYLOAD_URL = '/example.json';
+}
+
+
 // utility functions
 
 function getJSON(path, callback) {
   var xmlhttp = new XMLHttpRequest();
-  // var url = "origin" + path;
+  var url = JENKINS_URL + path;
 
   xmlhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
@@ -104,6 +123,23 @@ function generateFormattedCell(job) {
     href.appendChild(document.createTextNode('details'));
     links.appendChild(href);
     td.appendChild(links);
+    td.appendChild(_br_.cloneNode(false));
+
+    // add test result when available
+    if (job.testResult) {
+      var testResult = _span_.cloneNode(false);
+      testResult.setAttribute('class', 'tiny ' + job.testResult.lastCompletedBuild.result.toLowerCase());
+      var testBuildLink = _span_.cloneNode(false);
+      var testA = document.createElement('a');
+      testA.setAttribute('href', job.testResult.lastCompletedBuild.url);
+      testA.appendChild(document.createTextNode('Test suite'));
+      testBuildLink.appendChild(testA);
+      testResult.appendChild(testBuildLink);
+      testResult.appendChild(document.createTextNode(' '));
+      testResult.appendChild(document.createTextNode(job.testResult.lastCompletedBuild.result));
+      td.appendChild(testResult);
+      td.appendChild(_br_.cloneNode(false));
+    }
   } else {
     td.appendChild(document.createTextNode('-'));
   }
@@ -158,8 +194,27 @@ function generateTable(tableData) {
   document.body.appendChild(table);
 }
 
-getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,url,description],lastSuccessfulBuild[result,timestamp,url,description]]', function(data) {
+getJSON(PAYLOAD_URL, function(data) {
+  var testData = {};
   var tableData = {};
+
+  // -test
+  data.jobs.forEach(function(job) {
+    // e.g. 1. FreeBSD-stable-11-aarch64-test
+    // e.g. 2. FreeBSD-head-aarch64-test
+    var splitName = job.name.split('-');
+    if (splitName.shift() === 'FreeBSD' && splitName.pop() === 'test') {
+      // splitName contains version-[number-]arch
+      var arch = splitName.pop();
+      var version = splitName.join('/');
+      if (!testData[arch]) {
+        testData[arch] = {_order: getVersionOrder(splitName)};
+      }
+      testData[arch][version] = job;
+    }
+  });
+
+  // -build
   data.jobs.forEach(function(job) {
     // e.g. 1. FreeBSD-stable-10-amd64-build
     // e.g. 2. FreeBSD-head-amd64-build
@@ -171,10 +226,16 @@ getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[result,timesta
       if (!tableData[arch]) {
         tableData[arch] = {_order: getVersionOrder(splitName)};
       }
+      if (testData[arch] && testData[arch][version]) {
+        job['testResult'] = testData[arch][version];
+      }
       tableData[arch][version] = job;
     }
   });
 
+  if (RUN_ENV === 'local' || RUN_ENV === 'stage') {
+    document.body.appendChild(document.createTextNode("You are viewing a static (preview) version of the site on " + RUN_ENV +'.'));
+  }
   generateTable(tableData);
   document.body.appendChild(document.createTextNode("Last updated: " + new Date()));
 });
