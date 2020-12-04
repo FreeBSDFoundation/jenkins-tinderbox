@@ -4,11 +4,30 @@
  * Refer to LICENSE
 */
 
+
+// global options
+
+var RUN_ENV = 'local' // one of ['local', 'stage', 'prod']
+
+
+// configurations
+
+var JENKINS_URL = 'https://ci.freebsd.org';
+var PAYLOAD_URL = '/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,url,description],lastSuccessfulBuild[result,timestamp,url,description]]';
+
+if (RUN_ENV === 'local') {
+  JENKINS_URL = 'http://localhost:8000';
+} else if (RUN_ENV === 'stage') {
+  JENKINS_URL = 'https://people.freebsd.org/~ygy/tinderbox';
+  PAYLOAD_URL = '/example.json';
+}
+
+
 // utility functions
 
 function getJSON(path, callback) {
   var xmlhttp = new XMLHttpRequest();
-  // var url = "origin" + path;
+  var url = JENKINS_URL + path;
 
   xmlhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
@@ -52,58 +71,89 @@ var _td_    = document.createElement('td');
 var _br_    = document.createElement('br');
 var _span_  = document.createElement('span');
 
+// generates an info block for build/test info
+function generateInfoBlock(td, job) {
+  // last build time and status
+  var info = _span_.cloneNode(false);
+  info.setAttribute('class', job.lastCompletedBuild.result.toLowerCase());
+  var lastCompletedBuildDate = new Date(job.lastCompletedBuild.timestamp);
+  info.appendChild(document.createTextNode([
+    lastCompletedBuildDate.getUTCFullYear(),
+    twoDigits(lastCompletedBuildDate.getUTCMonth() + 1),
+    twoDigits(lastCompletedBuildDate.getUTCDate())
+  ].join('-')));
+  info.appendChild(_br_.cloneNode(false));
+  info.appendChild(document.createTextNode(
+    twoDigits(lastCompletedBuildDate.getUTCHours()) + ':' +
+    twoDigits(lastCompletedBuildDate.getUTCMinutes()) + ' UTC'
+  ));
+  td.appendChild(info);
+  td.appendChild(_br_.cloneNode(false));
+
+  // SVN revision number
+  var revision = document.createElement('i');
+  revision.appendChild(document.createTextNode(job.lastCompletedBuild.description || 'unknown revision'));
+  td.appendChild(revision);
+  td.appendChild(_br_.cloneNode(false));
+
+  var links = _span_.cloneNode(false);
+  links.setAttribute('class', 'tiny');
+  if (job.lastCompletedBuild.result === 'FAILURE') {
+    var failingSince = document.createElement('i');
+    failingSince.appendChild(document.createTextNode(
+      '(failing since ' + (job.lastSuccessfulBuild ? (job.lastSuccessfulBuild.description || 'n/a') : 'n/a') + ')'
+    ));
+    td.appendChild(failingSince);
+    td.appendChild(_br_.cloneNode(false));
+
+  // link to full jenkins job detail
+    var lastSuccessful = document.createElement('a');
+    lastSuccessful.setAttribute('href', job.lastSuccessfulBuild ? job.lastSuccessfulBuild.url : '#');
+    lastSuccessful.appendChild(document.createTextNode('last successful build'));
+    links.appendChild(lastSuccessful);
+    links.appendChild(document.createTextNode(' | '));
+  }
+
+  // link to details
+  var href = document.createElement('a');
+  href.setAttribute('href', job.lastCompletedBuild.url);
+  href.appendChild(document.createTextNode('details'));
+  links.appendChild(href);
+  td.appendChild(links);
+  td.appendChild(_br_.cloneNode(false));
+}
+
+// generates a table with two columns and no borderlines
+// to use inside the main table
+function generateInnerTable(td1, td2) {
+  var table = _table_.cloneNode(false);
+  var tbody = document.createElement('tbody');
+  var tr = _tr_.cloneNode(false);
+  td1.setAttribute('class', 'inner');
+  td2.setAttribute('class', 'inner');
+  tr.appendChild(td1);
+  tr.appendChild(td2);
+  tbody.appendChild(tr);
+  table.appendChild(tbody);
+  return table;
+}
+
 // generates a formatted cell, with two designs based
 // on whether the build succeeded or failed
 function generateFormattedCell(job) {
   var td = _td_.cloneNode(false);
 
   if (job && job.lastCompletedBuild) {
-    // last build time and status
-    var info = _span_.cloneNode(false);
-    info.setAttribute('class', job.lastCompletedBuild.result.toLowerCase());
-    var lastCompletedBuildDate = new Date(job.lastCompletedBuild.timestamp);
-    info.appendChild(document.createTextNode([
-      lastCompletedBuildDate.getUTCFullYear(),
-      twoDigits(lastCompletedBuildDate.getUTCMonth() + 1),
-      twoDigits(lastCompletedBuildDate.getUTCDate())
-    ].join('-')));
-    info.appendChild(_br_.cloneNode(false));
-    info.appendChild(document.createTextNode(
-      twoDigits(lastCompletedBuildDate.getUTCHours()) + ':' +
-      twoDigits(lastCompletedBuildDate.getUTCMinutes()) + ' UTC'
-    ));
-    td.appendChild(info);
-    td.appendChild(_br_.cloneNode(false));
-
-    // SVN revision number
-    var revision = document.createElement('i');
-    revision.appendChild(document.createTextNode(job.lastCompletedBuild.description || 'unknown revision'));
-    td.appendChild(revision);
-    td.appendChild(_br_.cloneNode(false));
-    if (job.lastCompletedBuild.result !== 'SUCCESS') {
-      var failingSince = document.createElement('i');
-      failingSince.appendChild(document.createTextNode(
-        '(failing since ' + (job.lastSuccessfulBuild ? (job.lastSuccessfulBuild.description || 'n/a') : 'n/a') + ')'
-      ));
-      td.appendChild(failingSince);
-      td.appendChild(_br_.cloneNode(false));
+    var td1 = _td_.cloneNode(false);
+    var td2 = _td_.cloneNode(false);
+    generateInfoBlock(td1, job);
+    if (job.testResult) {
+      generateInfoBlock(td2, job.testResult);
+    } else {
+      td2.appendChild(document.createTextNode('-'));
     }
-
-    // link to full jenkins job detail
-    var links = _span_.cloneNode(false);
-    links.setAttribute('class', 'tiny');
-    if (job.lastCompletedBuild.result !== 'SUCCESS') {
-      var lastSuccessful = document.createElement('a');
-      lastSuccessful.setAttribute('href', job.lastSuccessfulBuild ? job.lastSuccessfulBuild.url : '#');
-      lastSuccessful.appendChild(document.createTextNode('last successful build'));
-      links.appendChild(lastSuccessful);
-      links.appendChild(document.createTextNode(' | '));
-    }
-    var href = document.createElement('a');
-    href.setAttribute('href', job.lastCompletedBuild.url);
-    href.appendChild(document.createTextNode('details'));
-    links.appendChild(href);
-    td.appendChild(links);
+    var innerTable = generateInnerTable(td1, td2);
+    td.appendChild(innerTable);
   } else {
     td.appendChild(document.createTextNode('-'));
   }
@@ -128,6 +178,14 @@ function generateTable(tableData) {
     var th = _th_.cloneNode(false);
     th.setAttribute('scope', 'col');
     th.appendChild(document.createTextNode(c));
+
+    var td1 = _td_.cloneNode(false);
+    var td2 = _td_.cloneNode(false);
+    td1.appendChild(document.createTextNode('Build'));
+    td2.appendChild(document.createTextNode('Test'));
+    var innerTable = generateInnerTable(td1, td2)
+
+    th.appendChild(innerTable);
     columnHeaders.appendChild(th);
   });
   thead.appendChild(columnHeaders);
@@ -158,8 +216,27 @@ function generateTable(tableData) {
   document.body.appendChild(table);
 }
 
-getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,url,description],lastSuccessfulBuild[result,timestamp,url,description]]', function(data) {
+getJSON(PAYLOAD_URL, function(data) {
+  var testData = {};
   var tableData = {};
+
+  // -test
+  data.jobs.forEach(function(job) {
+    // e.g. 1. FreeBSD-stable-11-aarch64-test
+    // e.g. 2. FreeBSD-head-aarch64-test
+    var splitName = job.name.split('-');
+    if (splitName.shift() === 'FreeBSD' && splitName.pop() === 'test') {
+      // splitName contains version-[number-]arch
+      var arch = splitName.pop();
+      var version = splitName.join('/');
+      if (!testData[arch]) {
+        testData[arch] = {_order: getVersionOrder(splitName)};
+      }
+      testData[arch][version] = job;
+    }
+  });
+
+  // -build
   data.jobs.forEach(function(job) {
     // e.g. 1. FreeBSD-stable-10-amd64-build
     // e.g. 2. FreeBSD-head-amd64-build
@@ -171,10 +248,16 @@ getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[result,timesta
       if (!tableData[arch]) {
         tableData[arch] = {_order: getVersionOrder(splitName)};
       }
+      if (testData[arch] && testData[arch][version]) {
+        job['testResult'] = testData[arch][version];
+      }
       tableData[arch][version] = job;
     }
   });
 
+  if (RUN_ENV === 'local' || RUN_ENV === 'stage') {
+    document.body.appendChild(document.createTextNode("You are viewing a static (preview) version of the site on " + RUN_ENV +'.'));
+  }
   generateTable(tableData);
   document.body.appendChild(document.createTextNode("Last updated: " + new Date()));
 });
