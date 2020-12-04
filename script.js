@@ -71,75 +71,85 @@ var _td_    = document.createElement('td');
 var _br_    = document.createElement('br');
 var _span_  = document.createElement('span');
 
+// generates an info block for build/test info
+function generateInfoBlock(td, job) {
+  // last build time and status
+  var info = _span_.cloneNode(false);
+  info.setAttribute('class', job.lastCompletedBuild.result.toLowerCase());
+  var lastCompletedBuildDate = new Date(job.lastCompletedBuild.timestamp);
+  info.appendChild(document.createTextNode([
+    lastCompletedBuildDate.getUTCFullYear(),
+    twoDigits(lastCompletedBuildDate.getUTCMonth() + 1),
+    twoDigits(lastCompletedBuildDate.getUTCDate())
+  ].join('-')));
+  info.appendChild(_br_.cloneNode(false));
+  info.appendChild(document.createTextNode(
+    twoDigits(lastCompletedBuildDate.getUTCHours()) + ':' +
+    twoDigits(lastCompletedBuildDate.getUTCMinutes()) + ' UTC'
+  ));
+  td.appendChild(info);
+  td.appendChild(_br_.cloneNode(false));
+
+  // SVN revision number
+  var revision = document.createElement('i');
+  revision.appendChild(document.createTextNode(job.lastCompletedBuild.description || 'unknown revision'));
+  td.appendChild(revision);
+  td.appendChild(_br_.cloneNode(false));
+
+  var links = _span_.cloneNode(false);
+  links.setAttribute('class', 'tiny');
+  if (job.lastCompletedBuild.result === 'FAILURE') {
+    var failingSince = document.createElement('i');
+    failingSince.appendChild(document.createTextNode(
+      '(failing since ' + (job.lastSuccessfulBuild ? (job.lastSuccessfulBuild.description || 'n/a') : 'n/a') + ')'
+    ));
+    td.appendChild(failingSince);
+    td.appendChild(_br_.cloneNode(false));
+
+  // link to full jenkins job detail
+    var lastSuccessful = document.createElement('a');
+    lastSuccessful.setAttribute('href', job.lastSuccessfulBuild ? job.lastSuccessfulBuild.url : '#');
+    lastSuccessful.appendChild(document.createTextNode('last successful build'));
+    links.appendChild(lastSuccessful);
+    links.appendChild(document.createTextNode(' | '));
+  }
+
+  // link to details
+  var href = document.createElement('a');
+  href.setAttribute('href', job.lastCompletedBuild.url);
+  href.appendChild(document.createTextNode('details'));
+  links.appendChild(href);
+  td.appendChild(links);
+  td.appendChild(_br_.cloneNode(false));
+}
+
 // generates a formatted cell, with two designs based
 // on whether the build succeeded or failed
 function generateFormattedCell(job) {
   var td = _td_.cloneNode(false);
 
   if (job && job.lastCompletedBuild) {
-    // last build time and status
-    var info = _span_.cloneNode(false);
-    info.setAttribute('class', job.lastCompletedBuild.result.toLowerCase());
-    var lastCompletedBuildDate = new Date(job.lastCompletedBuild.timestamp);
-    info.appendChild(document.createTextNode([
-      lastCompletedBuildDate.getUTCFullYear(),
-      twoDigits(lastCompletedBuildDate.getUTCMonth() + 1),
-      twoDigits(lastCompletedBuildDate.getUTCDate())
-    ].join('-')));
-    info.appendChild(_br_.cloneNode(false));
-    info.appendChild(document.createTextNode(
-      twoDigits(lastCompletedBuildDate.getUTCHours()) + ':' +
-      twoDigits(lastCompletedBuildDate.getUTCMinutes()) + ' UTC'
-    ));
-    td.appendChild(info);
-    td.appendChild(_br_.cloneNode(false));
+    var innerTable = _table_.cloneNode(false);
+    var innerTbody = document.createElement('tbody');
+    var innerTr = _tr_.cloneNode(false);
 
-    // SVN revision number
-    var revision = document.createElement('i');
-    revision.appendChild(document.createTextNode(job.lastCompletedBuild.description || 'unknown revision'));
-    td.appendChild(revision);
-    td.appendChild(_br_.cloneNode(false));
-    if (job.lastCompletedBuild.result !== 'SUCCESS') {
-      var failingSince = document.createElement('i');
-      failingSince.appendChild(document.createTextNode(
-        '(failing since ' + (job.lastSuccessfulBuild ? (job.lastSuccessfulBuild.description || 'n/a') : 'n/a') + ')'
-      ));
-      td.appendChild(failingSince);
-      td.appendChild(_br_.cloneNode(false));
-    }
+    var innerTd1 = _td_.cloneNode(false);
+    innerTd1.setAttribute('class', 'inner');
+    generateInfoBlock(innerTd1, job);
 
-    // link to full jenkins job detail
-    var links = _span_.cloneNode(false);
-    links.setAttribute('class', 'tiny');
-    if (job.lastCompletedBuild.result !== 'SUCCESS') {
-      var lastSuccessful = document.createElement('a');
-      lastSuccessful.setAttribute('href', job.lastSuccessfulBuild ? job.lastSuccessfulBuild.url : '#');
-      lastSuccessful.appendChild(document.createTextNode('last successful build'));
-      links.appendChild(lastSuccessful);
-      links.appendChild(document.createTextNode(' | '));
-    }
-    var href = document.createElement('a');
-    href.setAttribute('href', job.lastCompletedBuild.url);
-    href.appendChild(document.createTextNode('details'));
-    links.appendChild(href);
-    td.appendChild(links);
-    td.appendChild(_br_.cloneNode(false));
-
-    // add test result when available
+    var innerTd2 = _td_.cloneNode(false);
+    innerTd2.setAttribute('class', 'inner');
     if (job.testResult) {
-      var testResult = _span_.cloneNode(false);
-      testResult.setAttribute('class', 'tiny ' + job.testResult.lastCompletedBuild.result.toLowerCase());
-      var testBuildLink = _span_.cloneNode(false);
-      var testA = document.createElement('a');
-      testA.setAttribute('href', job.testResult.lastCompletedBuild.url);
-      testA.appendChild(document.createTextNode('Test suite'));
-      testBuildLink.appendChild(testA);
-      testResult.appendChild(testBuildLink);
-      testResult.appendChild(document.createTextNode(' '));
-      testResult.appendChild(document.createTextNode(job.testResult.lastCompletedBuild.result));
-      td.appendChild(testResult);
-      td.appendChild(_br_.cloneNode(false));
+      generateInfoBlock(innerTd2, job.testResult);
+    } else {
+      innerTd2.appendChild(document.createTextNode('-'));
     }
+
+    innerTr.appendChild(innerTd1);
+    innerTr.appendChild(innerTd2);
+    innerTbody.appendChild(innerTr);
+    innerTable.appendChild(innerTbody);
+    td.appendChild(innerTable);
   } else {
     td.appendChild(document.createTextNode('-'));
   }

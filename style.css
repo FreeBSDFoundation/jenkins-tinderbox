@@ -17,13 +17,26 @@ table {
 }
 
 tr { border: none; }
-th { background-color: #eeeeff; }
-td { border: grey 1px solid; }
 
-td, th {
-  width: 18ex;
+th {
+  background-color: #eeeeff;
   text-align: center;
   padding: 3pt;
+  position: sticky;
+  top: 0px;
+}
+
+td.inner {
+  width: 18ex;
+  padding: 2pt;
+  border: none;
+}
+
+td {
+  width: 36ex;
+  text-align: center;
+  padding: 4pt;
+  border: grey 1px solid;
 }
 
 i {
