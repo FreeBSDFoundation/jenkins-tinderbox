@@ -27,13 +27,13 @@ th {
 }
 
 td.inner {
-  width: 18ex;
-  padding: 2pt;
+  width: 16ex;
+  padding: 1pt;
   border: none;
 }
 
 td {
-  width: 36ex;
+  width: 32ex;
   text-align: center;
   padding: 4pt;
   border: grey 1px solid;

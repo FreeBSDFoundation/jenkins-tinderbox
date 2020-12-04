@@ -123,32 +123,36 @@ function generateInfoBlock(td, job) {
   td.appendChild(_br_.cloneNode(false));
 }
 
+// generates a table with two columns and no borderlines
+// to use inside the main table
+function generateInnerTable(td1, td2) {
+  var table = _table_.cloneNode(false);
+  var tbody = document.createElement('tbody');
+  var tr = _tr_.cloneNode(false);
+  td1.setAttribute('class', 'inner');
+  td2.setAttribute('class', 'inner');
+  tr.appendChild(td1);
+  tr.appendChild(td2);
+  tbody.appendChild(tr);
+  table.appendChild(tbody);
+  return table;
+}
+
 // generates a formatted cell, with two designs based
 // on whether the build succeeded or failed
 function generateFormattedCell(job) {
   var td = _td_.cloneNode(false);
 
   if (job && job.lastCompletedBuild) {
-    var innerTable = _table_.cloneNode(false);
-    var innerTbody = document.createElement('tbody');
-    var innerTr = _tr_.cloneNode(false);
-
-    var innerTd1 = _td_.cloneNode(false);
-    innerTd1.setAttribute('class', 'inner');
-    generateInfoBlock(innerTd1, job);
-
-    var innerTd2 = _td_.cloneNode(false);
-    innerTd2.setAttribute('class', 'inner');
+    var td1 = _td_.cloneNode(false);
+    var td2 = _td_.cloneNode(false);
+    generateInfoBlock(td1, job);
     if (job.testResult) {
-      generateInfoBlock(innerTd2, job.testResult);
+      generateInfoBlock(td2, job.testResult);
     } else {
-      innerTd2.appendChild(document.createTextNode('-'));
+      td2.appendChild(document.createTextNode('-'));
     }
-
-    innerTr.appendChild(innerTd1);
-    innerTr.appendChild(innerTd2);
-    innerTbody.appendChild(innerTr);
-    innerTable.appendChild(innerTbody);
+    var innerTable = generateInnerTable(td1, td2);
     td.appendChild(innerTable);
   } else {
     td.appendChild(document.createTextNode('-'));
@@ -174,6 +178,14 @@ function generateTable(tableData) {
     var th = _th_.cloneNode(false);
     th.setAttribute('scope', 'col');
     th.appendChild(document.createTextNode(c));
+
+    var td1 = _td_.cloneNode(false);
+    var td2 = _td_.cloneNode(false);
+    td1.appendChild(document.createTextNode('Build'));
+    td2.appendChild(document.createTextNode('Test'));
+    var innerTable = generateInnerTable(td1, td2)
+
+    th.appendChild(innerTable);
     columnHeaders.appendChild(th);
   });
   thead.appendChild(columnHeaders);
