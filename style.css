@@ -5,10 +5,14 @@ body {
   color: navy;
 }
 
-a:link { color: blue; }
-a:visited { color: gray; }
-a:active { color: red; }
-a:hover { color: blue; }
+a, a:visited {
+  color: blue;
+  text-decoration: none;
+}
+a:hover, a:active {
+  color: red;
+  text-decoration: underline;
+}
 
 .tiny { font-size: x-small; }
 
