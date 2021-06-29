@@ -1,6 +1,6 @@
 /*
  * MIT License
- * Copyright (c) 2017 The FreeBSD Foundation
+ * Copyright (c) 2017, 2021 The FreeBSD Foundation
  * Refer to LICENSE
 */
 
@@ -8,7 +8,7 @@
 
 function getJSON(path, callback) {
   var xmlhttp = new XMLHttpRequest();
-  // var url = "origin" + path;
+  var url = "https://ci.FreeBSD.org" + path;
 
   xmlhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
