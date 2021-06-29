@@ -177,4 +177,10 @@ getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[result,timesta
 
   generateTable(tableData);
   document.body.appendChild(document.createTextNode("Last updated: " + new Date()));
+  document.body.appendChild(document.createElement('br'));
+  document.body.appendChild(document.createTextNode("Source: "));
+  var a = document.createElement('a');
+  a.setAttribute('href', 'https://github.com/FreeBSDFoundation/jenkins-tinderbox');
+  a.appendChild(document.createTextNode('https://github.com/FreeBSDFoundation/jenkins-tinderbox'));
+  document.body.appendChild(a);
 });
