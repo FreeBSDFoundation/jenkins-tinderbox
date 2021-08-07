@@ -120,10 +120,8 @@ function generateTable(tableData) {
   var columnHeaders = _tr_.cloneNode(false);
   columnHeaders.appendChild(_th_.cloneNode(false));
   var columnNames = unique([].concat.apply([], rows.map(Object.keys))).sort(function(a, b) {
-    return a[1]._order < b[1]._order;
+    return getVersionOrder(a.split('/')) < getVersionOrder(b.split('/'));
   });
-  // TODO: make this cleaner, getting rid of the "order" field
-  columnNames.splice(columnNames.indexOf('_order'), 1);
   columnNames.forEach(function(c) {
     var th = _th_.cloneNode(false);
     th.setAttribute('scope', 'col');
@@ -169,7 +167,7 @@ getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[result,timesta
       var arch = splitName.pop();
       var version = splitName.join('/');
       if (!tableData[arch]) {
-        tableData[arch] = {_order: getVersionOrder(splitName)};
+        tableData[arch] = {};
       }
       tableData[arch][version] = job;
     }
