@@ -39,7 +39,7 @@ function twoDigits(n) {
 }
 
 function shortHash(hash) {
-  return hash.substring(0, 11);
+  return hash.substring(0, 12);
 }
 
 // splitName must be of the format ['head'] or [TYPE, NUMBER]
