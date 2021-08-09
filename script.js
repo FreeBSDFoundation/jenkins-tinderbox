@@ -38,6 +38,10 @@ function twoDigits(n) {
   return (n > 9) ? ""+n : "0"+n;
 }
 
+function shortHash(hash) {
+  return hash.substring(0, 11);
+}
+
 // splitName must be of the format ['head'] or [TYPE, NUMBER]
 function getVersionOrder(splitName) {
   return (splitName.length === 1) ? Number.MAX_SAFE_INTEGER : parseInt(splitName[1]);
@@ -75,15 +79,15 @@ function generateFormattedCell(job) {
     td.appendChild(info);
     td.appendChild(_br_.cloneNode(false));
 
-    // SVN revision number
+    // Git hash
     var revision = document.createElement('i');
-    revision.appendChild(document.createTextNode(job.lastCompletedBuild.description || 'unknown revision'));
+    revision.appendChild(document.createTextNode(shortHash(job.lastCompletedBuild.description) || 'unknown revision'));
     td.appendChild(revision);
     td.appendChild(_br_.cloneNode(false));
     if (job.lastCompletedBuild.result !== 'SUCCESS') {
       var failingSince = document.createElement('i');
       failingSince.appendChild(document.createTextNode(
-        '(failing since ' + (job.lastSuccessfulBuild ? (job.lastSuccessfulBuild.description || 'n/a') : 'n/a') + ')'
+        '(failing since ' + (job.lastSuccessfulBuild ? (shortHash(job.lastSuccessfulBuild.description) || 'n/a') : 'n/a') + ')'
       ));
       td.appendChild(failingSince);
       td.appendChild(_br_.cloneNode(false));
