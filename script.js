@@ -80,9 +80,9 @@ function generateFormattedCell(job) {
     td.appendChild(_br_.cloneNode(false));
 
     // Git hash
-    var revision = document.createElement('i');
-    revision.appendChild(document.createTextNode(shortHash(job.lastCompletedBuild.description) || 'unknown revision'));
-    td.appendChild(revision);
+    var commit = document.createElement('i');
+    commit.appendChild(document.createTextNode(shortHash(job.lastCompletedBuild.description) || 'unknown commit'));
+    td.appendChild(commit);
     td.appendChild(_br_.cloneNode(false));
     if (job.lastCompletedBuild.result !== 'SUCCESS') {
       var failingSince = document.createElement('i');
