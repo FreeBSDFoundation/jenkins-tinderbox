@@ -214,6 +214,7 @@ getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[number,result,
   });
 
   generateTable(tableData);
+  document.getElementById("loader-container").remove();
   document.body.appendChild(document.createTextNode("Last updated: " + new Date()));
   document.body.appendChild(document.createElement('br'));
   document.body.appendChild(document.createTextNode("Source: "));
