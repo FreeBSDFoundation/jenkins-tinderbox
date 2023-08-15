@@ -39,7 +39,7 @@ function twoDigits(n) {
 }
 
 function shortHash(hash) {
-  return hash.substring(0, 12);
+  return hash ? hash.substring(0, 12) : '';
 }
 
 // splitName must be of the format ['head'] or [TYPE, NUMBER]
@@ -84,35 +84,69 @@ function generateFormattedCell(job) {
     commit.appendChild(document.createTextNode(shortHash(job.lastCompletedBuild.description) || 'unknown commit'));
     td.appendChild(commit);
     td.appendChild(_br_.cloneNode(false));
-    if (job.lastCompletedBuild.result !== 'SUCCESS') {
-      var failingSince = document.createElement('i');
-      failingSince.appendChild(document.createTextNode(
-        '(failing since ' + (job.lastSuccessfulBuild ? (shortHash(job.lastSuccessfulBuild.description) || 'n/a') : 'n/a') + ')'
-      ));
-      td.appendChild(failingSince);
-      td.appendChild(_br_.cloneNode(false));
-    }
 
     // link to full jenkins job detail
     var links = _span_.cloneNode(false);
     links.setAttribute('class', 'tiny');
-    if (job.lastCompletedBuild.result !== 'SUCCESS') {
-      var lastSuccessful = document.createElement('a');
-      lastSuccessful.setAttribute('href', job.lastSuccessfulBuild ? job.lastSuccessfulBuild.url : '#');
-      lastSuccessful.appendChild(document.createTextNode('last successful build'));
-      links.appendChild(lastSuccessful);
-      links.appendChild(document.createTextNode(' | '));
-    }
     var href = document.createElement('a');
     href.setAttribute('href', job.lastCompletedBuild.url);
     href.appendChild(document.createTextNode('details'));
     links.appendChild(href);
     td.appendChild(links);
+    td.appendChild(_br_.cloneNode(false));
+
+    // check if the last completed build result is not 'SUCCESS'
+    if (job.lastCompletedBuild.result !== 'SUCCESS') {
+      var fail_url = '', failingSinceNumber = '1', fail_since_hash = 'n/a';
+      if (job.lastCompletedBuild.result === 'FAILURE')
+        failingSinceNumber = (job.lastSuccessfulBuild ? job.lastSuccessfulBuild.number + 1: '1').toString();
+      else if (job.lastCompletedBuild.result === 'UNSTABLE')
+        failingSinceNumber = (Math.max(job.lastStableBuild ? job.lastStableBuild.number : 0, job.lastFailedBuild ? job.lastFailedBuild.number : 0) + 1).toString();
+      fail_url = '/job/' + job.name + '/' + failingSinceNumber + '/api/json?tree=description';
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "https://ci.FreeBSD.org" + fail_url, false);
+      xhr.send();
+      if (xhr.status === 200)
+        fail_since_hash = JSON.parse(xhr.responseText).description;
+      else
+        throw new Error("Failed to fetch data from " + fail_url + ". Status: " + xhr.status);
+
+      var failingSince = document.createElement('i');
+      failingSince.appendChild(document.createTextNode(
+        '(failing since ' + (fail_since_hash === '<html>' ? 'unknown commit' : shortHash(fail_since_hash)) + ')'
+      ));
+      td.appendChild(failingSince);
+      td.appendChild(_br_.cloneNode(false));
+      var links = _span_.cloneNode(false);
+      links.setAttribute('class', 'tiny');
+      var lastSuccessful = document.createElement('a');
+      lastSuccessful.setAttribute('href', 'https://ci.FreeBSD.org' + fail_url.split('api')[0]);
+      lastSuccessful.appendChild(document.createTextNode('details'));
+      links.appendChild(lastSuccessful);
+      td.appendChild(links);
+    }
   } else {
     td.appendChild(document.createTextNode('-'));
   }
 
   return td;
+}
+
+const customOrder = 'abcdefghijklmnopqrstuvwxyz9876543210';
+
+function customSort(str1, str2) {
+  const minLength = Math.min(str1.length, str2.length);
+
+  for (let i = 0; i < minLength; i++) {
+    const char1 = str1.charAt(i);
+    const char2 = str2.charAt(i);
+
+    if (char1 !== char2) {
+      return customOrder.indexOf(char1) - customOrder.indexOf(char2);
+    }
+  }
+
+  return str1.length - str2.length; // If all characters are equal, shorter strings come first
 }
 
 function generateTable(tableData) {
@@ -126,6 +160,7 @@ function generateTable(tableData) {
   var columnNames = unique([].concat.apply([], rows.map(Object.keys))).sort(function(a, b) {
     return getVersionOrder(a.split('/')) < getVersionOrder(b.split('/'));
   });
+  columnNames.sort(customSort);
   columnNames.forEach(function(c) {
     var th = _th_.cloneNode(false);
     th.setAttribute('scope', 'col');
@@ -160,20 +195,21 @@ function generateTable(tableData) {
   document.body.appendChild(table);
 }
 
-getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[result,timestamp,url,description],lastSuccessfulBuild[result,timestamp,url,description]]', function(data) {
+getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[number,result,timestamp,url,description],lastSuccessfulBuild[number,result,timestamp,url,description],lastFailedBuild[number],lastStableBuild[number]]', function(data) {
   var tableData = {};
   data.jobs.forEach(function(job) {
     // e.g. 1. FreeBSD-stable-10-amd64-build
     // e.g. 2. FreeBSD-head-amd64-build
     var splitName = job.name.split('-');
-    if (splitName.shift() === 'FreeBSD' && splitName.pop() === 'build') {
+    if (splitName.shift() === 'FreeBSD' && (splitName.slice(-1)[0] === 'build' || splitName.slice(-1)[0] === 'test')) {
       // splitName contains version-[number-]arch
+      var proj = splitName.pop(); // test or build
       var arch = splitName.pop();
       var version = splitName.join('/');
       if (!tableData[arch]) {
         tableData[arch] = {};
       }
-      tableData[arch][version] = job;
+      tableData[arch][version + '-' + proj] = job;
     }
   });
 
