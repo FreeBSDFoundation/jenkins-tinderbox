@@ -150,19 +150,36 @@ function generateTable(tableData) {
 
   // generating column headers
   var thead = document.createElement('thead');
-  var columnHeaders = _tr_.cloneNode(false);
-  columnHeaders.appendChild(_th_.cloneNode(false));
+  var columnHeaders1 = _tr_.cloneNode(false);
+  var columnHeaders2 = _tr_.cloneNode(false);
+  columnHeaders1.appendChild(_th_.cloneNode(false));
+  columnHeaders2.appendChild(_th_.cloneNode(false));
   var columnNames = unique([].concat.apply([], rows.map(Object.keys))).sort(function(a, b) {
     return getVersionOrder(a.split('/')) < getVersionOrder(b.split('/'));
   });
   columnNames.sort(customSort);
-  columnNames.forEach(function(c) {
+  var columnNames1 = unique(columnNames.map(function(name) {
+    return name.split('-')[0];
+  }));
+  var columnNames2 = columnNames.map(function(name) {
+    return name.split('-')[1];
+  });
+
+  columnNames1.forEach(function(c) {
+    var th = _th_.cloneNode(false);
+    th.setAttribute('scope', 'col');
+    th.setAttribute('colspan', '2');
+    th.appendChild(document.createTextNode(c));
+    columnHeaders1.appendChild(th);
+  });
+  columnNames2.forEach(function(c) {
     var th = _th_.cloneNode(false);
     th.setAttribute('scope', 'col');
     th.appendChild(document.createTextNode(c));
-    columnHeaders.appendChild(th);
+    columnHeaders2.appendChild(th);
   });
-  thead.appendChild(columnHeaders);
+  thead.appendChild(columnHeaders1);
+  thead.appendChild(columnHeaders2);
   table.appendChild(thead);
 
   // generating rows, ordered in decending order

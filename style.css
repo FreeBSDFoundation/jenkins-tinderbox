@@ -21,7 +21,10 @@ table {
 }
 
 tr { border: none; }
-th { background-color: #eeeeff; }
+th {
+  background-color: #eeeeff;
+  border: grey 1px solid;
+}
 td { border: grey 1px solid; }
 
 td, th {
