@@ -6,6 +6,8 @@
  * Refer to LICENSE
 */
 
+'use strict';
+
 // utility functions
 
 function getJSON(path, callback) {
@@ -28,7 +30,7 @@ function unique(arr) {
   var hash = {}, result = [];
   for (var i = 0, l = arr.length; i < l; ++i) {
     var item = arr[i];
-    if (!hash.hasOwnProperty(item)) {
+    if (!Object.prototype.hasOwnProperty.call(hash, item)) {
       hash[item] = true;
       result.push(item);
     }
@@ -57,6 +59,8 @@ var _th_    = document.createElement('th');
 var _td_    = document.createElement('td');
 var _br_    = document.createElement('br');
 var _span_  = document.createElement('span');
+var _a_     = document.createElement('a');
+var _i_     = document.createElement('i');
 
 // generates a formatted cell, with two designs based
 // on whether the build succeeded or failed
@@ -82,7 +86,7 @@ function generateFormattedCell(job) {
     td.appendChild(_br_.cloneNode(false));
 
     // Git hash
-    var commit = document.createElement('i');
+    var commit = _i_.cloneNode(false);
     commit.appendChild(document.createTextNode(shortHash(job.lastCompletedBuild.description) || 'unknown commit'));
     td.appendChild(commit);
     td.appendChild(_br_.cloneNode(false));
@@ -129,14 +133,14 @@ function generateFormattedCell(job) {
   return td;
 }
 
-const customOrder = 'abcdefghijklmnopqrstuvwxyz9876543210';
+var customOrder = 'abcdefghijklmnopqrstuvwxyz9876543210';
 
 function customSort(str1, str2) {
-  const minLength = Math.min(str1.length, str2.length);
+  var minLength = Math.min(str1.length, str2.length);
 
-  for (let i = 0; i < minLength; i++) {
-    const char1 = str1.charAt(i);
-    const char2 = str2.charAt(i);
+  for (var i = 0; i < minLength; i++) {
+    var char1 = str1.charAt(i);
+    var char2 = str2.charAt(i);
 
     if (char1 !== char2) {
       return customOrder.indexOf(char1) - customOrder.indexOf(char2);
@@ -230,9 +234,9 @@ getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[number,result,
   generateTable(tableData);
   document.getElementById("loader-container").remove();
   document.body.appendChild(document.createTextNode("Last updated: " + new Date()));
-  document.body.appendChild(document.createElement('br'));
+  document.body.appendChild(_br_.cloneNode(false));
   document.body.appendChild(document.createTextNode("Source: "));
-  var a = document.createElement('a');
+  var a = _a_.cloneNode(false);
   a.setAttribute('href', 'https://github.com/FreeBSDFoundation/jenkins-tinderbox');
   a.appendChild(document.createTextNode('https://github.com/FreeBSDFoundation/jenkins-tinderbox'));
   document.body.appendChild(a);
