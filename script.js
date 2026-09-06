@@ -62,6 +62,16 @@ var _span_  = document.createElement('span');
 var _a_     = document.createElement('a');
 var _i_     = document.createElement('i');
 
+function jobDetailsLink(name, number, text) {
+  var links = _span_.cloneNode(false);
+  links.setAttribute('class', 'tiny');
+  var href = _a_.cloneNode(false);
+  href.setAttribute('href', 'https://ci.FreeBSD.org/job/' + name + '/' + number);
+  href.appendChild(document.createTextNode(text));
+  links.appendChild(href);
+  return links;
+}
+
 // generates a formatted cell, with two designs based
 // on whether the build succeeded or failed
 function generateFormattedCell(job) {
@@ -92,39 +102,32 @@ function generateFormattedCell(job) {
     td.appendChild(_br_.cloneNode(false));
 
     // link to full jenkins job detail
-    var links = _span_.cloneNode(false);
-    links.setAttribute('class', 'tiny');
-    var href = document.createElement('a');
-    href.setAttribute('href', job.lastCompletedBuild.url);
-    href.appendChild(document.createTextNode('details'));
-    links.appendChild(href);
-    td.appendChild(links);
+    td.appendChild(jobDetailsLink(job.name, job.lastCompletedBuild.number, 'job #' + job.lastCompletedBuild.number));
     td.appendChild(_br_.cloneNode(false));
 
     // check if the last completed build result is not 'SUCCESS'
     if (job.lastCompletedBuild.result !== 'SUCCESS') {
-      var fail_url = '', failingSinceNumber = '1', fail_since_hash = 'n/a';
-      if (job.lastCompletedBuild.result === 'FAILURE')
-        failingSinceNumber = (job.lastSuccessfulBuild ? job.lastSuccessfulBuild.number + 1: '1').toString();
-      else if (job.lastCompletedBuild.result === 'UNSTABLE')
-        failingSinceNumber = (Math.max(job.lastStableBuild ? job.lastStableBuild.number : 0, job.lastFailedBuild ? job.lastFailedBuild.number : 0) + 1).toString();
-      fail_url = '/job/' + job.name + '/' + failingSinceNumber + '/api/json?tree=description'
-      getJSON(fail_url, function(data) {
-        fail_since_hash = data.description;
-        var failingSince = document.createElement('i');
-        failingSince.appendChild(document.createTextNode(
-          '(failing since ' + (fail_since_hash === '<html>' ? 'unknown commit' : shortHash(fail_since_hash)) + ')'
+      if (job.lastStableBuild) {
+        var lastStableCommit = job.lastStableBuild.description === '<html>' ? 'unknown commit' : shortHash(job.lastStableBuild.description);
+
+        var failedRuns = _i_.cloneNode(false);
+        failedRuns.appendChild(document.createTextNode(
+          'Passed ' + (job.lastCompletedBuild.number - job.lastStableBuild.number) + '+ runs ago'
         ));
-        td.appendChild(failingSince);
+        td.appendChild(failedRuns);
         td.appendChild(_br_.cloneNode(false));
-        var links = _span_.cloneNode(false);
-        links.setAttribute('class', 'tiny');
-        var lastSuccessful = document.createElement('a');
-        lastSuccessful.setAttribute('href', 'https://ci.FreeBSD.org' + fail_url.split('api')[0]);
-        lastSuccessful.appendChild(document.createTextNode('details'));
-        links.appendChild(lastSuccessful);
-        td.appendChild(links);
-      });
+
+        var lastSuccessInfo = _i_.cloneNode(false);
+        lastSuccessInfo.appendChild(document.createTextNode(lastStableCommit));
+        td.appendChild(lastSuccessInfo);
+        td.appendChild(_br_.cloneNode(false));
+
+        var failingSince = job.lastStableBuild.number + 1;
+        td.appendChild(jobDetailsLink(job.name, job.lastCompletedBuild.number, 'failing since #' + failingSince));
+      } else {
+        // Unlikely: this job has been failing since its inception. No need to show
+        // any further details.
+      }
     }
   } else {
     td.appendChild(document.createTextNode('-'));
@@ -213,7 +216,7 @@ function generateTable(tableData) {
   document.body.appendChild(table);
 }
 
-getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[number,result,timestamp,url,description],lastSuccessfulBuild[number,result,timestamp,url,description],lastFailedBuild[number],lastStableBuild[number]]', function(data) {
+getJSON('/view/FreeBSD/api/json?tree=jobs[name,lastCompletedBuild[number,result,timestamp,description],lastStableBuild[number,description]]', function(data) {
   var tableData = {};
   data.jobs.forEach(function(job) {
     // e.g. 1. FreeBSD-stable-10-amd64-build
