@@ -123,7 +123,7 @@ function generateFormattedCell(job) {
         td.appendChild(_br_.cloneNode(false));
 
         var failingSince = job.lastStableBuild.number + 1;
-        td.appendChild(jobDetailsLink(job.name, job.lastCompletedBuild.number, 'failing since #' + failingSince));
+        td.appendChild(jobDetailsLink(job.name, job.lastStableBuild.number + 1, 'failing since #' + failingSince));
       } else {
         // Unlikely: this job has been failing since its inception. No need to show
         // any further details.
