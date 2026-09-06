@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MIT
+ *
  * MIT License
  * Copyright (c) 2017, 2021 The FreeBSD Foundation
  * Refer to LICENSE
